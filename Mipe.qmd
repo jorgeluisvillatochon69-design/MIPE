@@ -1,0 +1,602 @@
+---
+title: "MIPE_plagas_cacao"
+
+format: html
+---
+
+
+```{r}
+library(knitr)
+library(kableExtra)
+
+tabla_datos <- matrix(c(
+  "Fecha de evaluación: 31/01/26",
+  "Finca/Lote: Suyubamaba",
+
+  paste(
+    "Evaluadores:",
+    "Castro Cajo Jhan Franco - ",
+    "Villa Tochón Jorge Luis"
+  ),
+  paste(
+    "Estado fenológico del cultivo:",
+    "Fructificación"
+  ),
+
+  paste(
+    "Clima al momento:",
+    "Parcialmente soleado"
+  ),
+  "Altura (msnm): 1412"
+), ncol = 2, byrow = TRUE)
+
+kable(
+  tabla_datos,
+  escape = FALSE,
+  align = c("l", "l")
+) %>%
+  kable_styling(
+    full_width = FALSE,
+    bootstrap_options = c("bordered")
+  )
+
+```
+
+
+
+# 1. Informacion general de las plagas 
+
+## Monalonion
+Nombre Científico: Monalonion dissimulatum
+
+Clasificación: Hemiptera: Miridae
+
+Nombres Comunes: Chinche del cacao, Monalonion, Chinche chupadora, Mosquilla.
+
+Importancia Económica Es considerada una plaga clave en la producción de cacao. Sus daños directos se originan al alimentarse de la savia y ovipositar en los tejidos tiernos. Sus ataques provocan:
+
+Pérdida total de frutos jóvenes.
+
+Deformación severa de las mazorcas en desarrollo.
+
+Necrosis en brotes vegetativos y chupones, afectando la arquitectura del árbol.
+
+## Perforador de la Mazorca
+Nombre Científico: Carmenta foraseminis.
+
+Clasificación: Lepidoptera: Sesiidae
+
+Nombres Comunes: Perforador de la mazorca, Carmenta, Pasador del fruto.
+
+Importancia Económica Esta plaga posee un gran impacto económico debido a los hábitos de su larva, que perfora la corteza para alimentarse de los tejidos internos (placenta y semillas). Las consecuencias principales son:
+
+Maduración prematura y caída de los frutos antes de la cosecha.
+
+Facilitación de la entrada de patógenos fúngicos.
+
+Pérdida significativa del peso y la calidad del grano seco.
+
+## Trips del Cacao
+Nombre Científico: Selenothrips rubrocinctus.
+
+Clasificación: Thysanoptera: Thripidae.
+
+Nombres Comunes: Trips de la banda roja, Trips del cacao.
+
+Importancia Económica Aunque se cataloga como una plaga secundaria, su importancia económica radica en el daño estético y fisiológico. Al raspar y succionar los tejidos de la cáscara, genera:
+
+Lesiones corchosas y bronceadas que deprecian el valor comercial del fruto.
+
+Reducción de la capacidad fotosintética cuando el ataque se desplaza hacia las hojas y brotes jóvenes.
+
+# 2. Metodologia
+La evaluación fitosanitaria se llevó a cabo mediante un muestreo sistemático en campo para cuantificar la presencia y el impacto de las principales plagas del cacao (Monalonion dissimulatum, Carmenta foraseminis y Selenothrips rubrocinctus).
+
+## 2.1. Unidad de Muestreo y Tamaño de Muestra
+Se seleccionó un lote representativo de la parcela, evaluando un total de 20 árboles de cacao. En cada árbol, se realizó un examen minucioso tanto de las estructuras vegetativas (tronco y ramas) como de los órganos reproductivos (mazorcas).
+
+## 2.2. Variables Evaluadas
+Para determinar el estado fitosanitario, se registraron las siguientes variables:
+
+### Incidencia a nivel de árbol: 
+Presencia o ausencia de la plaga o sus daños en la estructura general del árbol (brotes, ramas o tronco).
+
+### Incidencia a nivel de fruto: 
+Conteo del número de mazorcas afectadas frente al total de mazorcas producidas por árbol.
+
+### Severidad: 
+Estimación del área superficial del fruto dañada, utilizando una escala visual de 5 grados (0 a 4).
+
+## 2.3. Procedimiento de Evaluación por Plaga
+Monalonion (Monalonion dissimulatum)
+Se buscaron ninfas y adultos de color rojizo, así como la presencia de pústulas circulares de color oscuro y lesiones necróticas en brotes tiernos y frutos jóvenes (cherelles).
+
+Perforador de la mazorca (Carmenta foraseminis)
+La evaluación se centró en la detección de orificios de entrada en las mazorcas, identificables por la acumulación de serrín y excrementos (frass) expulsados por la larva hacia el exterior del fruto.
+
+Trips del cacao (Selenothrips rubrocinctus)
+Se realizó una inspección visual de la superficie de las mazorcas buscando el característico "bronceado" o "herrumbre", causado por el raspado del tejido epidérmico por parte de ninfas y adultos.
+
+
+
+
+```{r}
+library(readr)
+library(googlesheets4)
+library(here)
+library(knitr)
+library(kableExtra)
+```
+
+# Importar datos
+
+```{r}
+install.packages("googlesheets4")
+library(googlesheets4)
+
+# Autoriza tu Google Account si es necesario
+gs4_deauth()  # si la hoja es pública
+# o
+# gs4_auth()  # si necesita acceso autenticado
+
+url <- "https://docs.google.com/spreadsheets/d/14wJeyNtYodvILF1R-_JvSierEg64W6Hn-5jPmqMA-X8"
+datos <- read_sheet(url, sheet = "plagas_cacao")  # o por GID
+
+head(datos)
+```
+
+# Escala
+
+```{r}
+#| label: tbl-escala
+#| tbl-cap: "Escala de Severidad de Plagas en Cacao"
+#| echo: false
+
+# 1. Crear los datos de la tabla
+datos_escala <- data.frame(
+  Grado = 0:4,
+  `Descripción Visual` = c(
+    "Sin síntomas visibles.",
+    "Puntos aislados, pocas pústulas dispersas.",
+    "Pústulas agrupadas, manchas visibles pero separadas.",
+    "Pústulas coalescentes (unidas), formando grandes manchas.",
+    "Más de la mitad de la mazorca cubierta de costras/pústulas. Deformación."
+  ),
+  `Porcentaje de Área Afectada` = c(
+    "0%", 
+    "1% - 10%", 
+    "11% - 25%", 
+    "26% - 50%", 
+    "> 50%"
+  ),
+  Interpretación = c(
+    "Mazorca Sana",
+    "Daño Leve",
+    "Daño Moderado",
+    "Daño Fuerte",
+    "Daño Severo / Pérdida"
+  ),
+  check.names = FALSE # Esto permite que los nombres tengan espacios
+)
+
+# 2. Generar la tabla elegante
+knitr::kable(datos_escala, align = "clcl")
+```
+
+# Formulas
+Los datos fueron recolectados en campo y procesados en el software R (versión 4.5.2) mediante el entorno RStudio. Se utilizaron las siguientes fórmulas para el cálculo de los indicadores:
+
+## a) Nivel de incidencia por árbol
+
+```{r}
+# Crear una imagen con la fórmula
+plot.new()
+text(
+  0.5, 0.5,
+  expression(
+    Incidencia~"(%)" == frac(
+      "Árboles con daño",
+      "Total de árboles"
+    ) %*% 100
+  ),
+  cex = 1.5
+)
+```
+
+## b) Nivel de incidencia por fruto
+```{r}
+plot.new()
+text(
+  0.5, 0.5,
+  expression(
+    Incidencia~"(%)" == frac(
+      "Mazorcas con daño",
+      "Total de mazorcas evaluadas"
+    ) %*% 100
+  ),
+  cex = 1.5
+)
+```
+
+# calculo para cada una de las plagas 
+
+## Incidencia de Monalonion a nivel de árbol
+
+```{r}
+# Incidencia a nivel de árbol
+incidencia_arbol_monalonion <- 65
+
+barplot(
+  incidencia_arbol_monalonion,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Incidencia de Monalonion a nivel de Árbol",
+  col = "forestgreen"
+)
+
+# Etiqueta con el valor
+text(
+  x = 1,
+  y = incidencia_arbol_monalonion + 5,
+  labels = paste0(incidencia_arbol_monalonion, "%"),
+  cex = 1.2
+)
+```
+## Incidencia de Monalonion dissimulatum a nivel de fruto
+```{r}
+# Incidencia a nivel de fruto
+incidencia_fruto_monalonion <- 44
+
+barplot(
+  incidencia_fruto_monalonion,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Incidencia de Monalonion a nivel de Fruto",
+  col = "sienna"
+)
+
+# Etiqueta con el valor
+text(
+  x = 1,
+  y = incidencia_fruto_monalonion + 5,
+  labels = paste0(incidencia_fruto_monalonion, "%"),
+  cex = 1.2
+)
+```
+## Gráfico de la incidencia a nivel de árbol y fruto
+
+```{r}
+# Vector comparativo
+incidencias <- c(
+  "Árbol" = incidencia_arbol_monalonion,
+  "Fruto" = incidencia_fruto_monalonion
+)
+
+barplot(
+  incidencias,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Comparación de Incidencia de Monalonion",
+  col = c("forestgreen", "sienna")
+)
+
+# Etiquetas de porcentaje
+text(
+  x = c(0.7, 1.9),
+  y = incidencias + 5,
+  labels = paste0(incidencias, "%"),
+  cex = 1.1
+)
+```
+
+## Incidencia del perforador a nivel de árbol
+
+```{r}
+# Datos de campo (AJUSTA si tus valores son otros)
+total_arboles <- 20
+arboles_con_perforador <- 9
+
+# Incidencia a nivel de árbol
+incidencia_arbol_perforador <-
+  (arboles_con_perforador / total_arboles) * 100
+
+incidencia_arbol_perforador
+```
+
+### Gráfico
+
+```{r}
+barplot(
+  incidencia_arbol_perforador,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Incidencia del Perforador a nivel de Árbol",
+  col = "darkolivegreen"
+)
+
+text(
+  x = 1,
+  y = incidencia_arbol_perforador + 5,
+  labels = paste0(round(incidencia_arbol_perforador, 1), "%"),
+  cex = 1.2
+)
+
+```
+
+## Incidencia del perforador a nivel de fruto (mazorca)
+```{r}
+# Datos de campo
+arboles <- 20
+mazorcas_por_arbol <- 5
+mazorcas_con_perforador <- 18
+
+# Total de mazorcas evaluadas
+total_mazorcas <- arboles * mazorcas_por_arbol
+
+# Incidencia a nivel de fruto
+incidencia_mazorcas_perforador <-
+  (mazorcas_con_perforador / total_mazorcas) * 100
+
+incidencia_mazorcas_perforador
+```
+
+### Gráfico
+```{r}
+barplot(
+  incidencia_mazorcas_perforador,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Incidencia del Perforador a nivel de Fruto",
+  col = "saddlebrown"
+)
+
+text(
+  x = 1,
+  y = incidencia_mazorcas_perforador + 5,
+  labels = paste0(round(incidencia_mazorcas_perforador, 1), "%"),
+  cex = 1.2
+)
+```
+
+## Comparacion
+
+```{r}
+# Vector comparativo
+incidencias_perforador <- c(
+  "Árbol" = incidencia_arbol_perforador,
+  "Fruto" = incidencia_mazorcas_perforador
+)
+
+barplot(
+  incidencias_perforador,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Comparación de Incidencia del Perforador",
+  col = c("darkolivegreen", "saddlebrown")
+)
+
+text(
+  x = c(0.7, 1.9),
+  y = incidencias_perforador + 5,
+  labels = paste0(round(incidencias_perforador, 1), "%"),
+  cex = 1.2
+)
+```
+## Incidencia de la plaga trips a nivel de arbol
+
+```{r}
+# Datos de campo (ejemplo)
+total_arboles <- 20
+arboles_con_trips <- 11
+
+# Incidencia a nivel de árbol
+incidencia_arbol_trips <-
+  (arboles_con_trips / total_arboles) * 100
+
+incidencia_arbol_trips
+
+```
+
+### Gráfico
+
+```{r}
+barplot(
+  incidencia_arbol_trips,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Incidencia de Trips a nivel de Árbol",
+  col = "darkseagreen"
+)
+
+text(
+  x = 1,
+  y = incidencia_arbol_trips + 5,
+  labels = paste0(round(incidencia_arbol_trips, 1), "%"),
+  cex = 1.2
+)
+```
+
+## Incidencia de la plaga Trips a nivel de fruto
+
+```{r}
+# Datos de campo
+arboles <- 20
+mazorcas_por_arbol <- 5
+mazorcas_con_trips <- 30
+
+# Total de mazorcas evaluadas
+total_mazorcas <- arboles * mazorcas_por_arbol
+
+# Incidencia a nivel de fruto
+incidencia_fruto_trips <-
+  (mazorcas_con_trips / total_mazorcas) * 100
+
+incidencia_fruto_trips
+```
+
+### Gráfico
+
+```{r}
+barplot(
+  incidencia_fruto_trips,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Incidencia de Trips a nivel de Fruto",
+  col = "goldenrod"
+)
+
+text(
+  x = 1,
+  y = incidencia_fruto_trips + 5,
+  labels = paste0(round(incidencia_fruto_trips, 1), "%"),
+  cex = 1.2
+)
+```
+
+## Incidencia de las plagas evaluadas
+
+```{r}
+# Crear tabla resumen de incidencia por plaga
+tabla_incidencia <- data.frame(
+  Plaga = c("Monalonion", "Perforador", "Trips"),
+  Incidencia_Arbol = c(65, 45, 55),
+  Incidencia_Fruto = c(44, 18, 30)
+)
+
+tabla_incidencia
+```
+
+```{r}
+knitr::kable(
+  tabla_incidencia,
+  col.names = c(
+    "Plaga",
+    "Incidencia a nivel de árbol (%)",
+    "Incidencia a nivel de fruto (%)"
+  ),
+  caption = "Incidencia (%) de plagas evaluadas en el cultivo"
+)
+```
+
+### Gráfico
+
+```{r}
+# Convertir a matriz para gráfico
+matriz_incidencia <- as.matrix(tabla_incidencia[, 2:3])
+rownames(matriz_incidencia) <- tabla_incidencia$Plaga
+
+# Gráfico comparativo
+barplot(
+  t(matriz_incidencia),
+  beside = TRUE,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Comparación de Incidencia de Plagas Evaluadas",
+  col = c("darkgreen", "orange"),
+  legend.text = c("Nivel Árbol", "Nivel Fruto"),
+  args.legend = list(x = "topright", bty = "n")
+)
+bp <- barplot(
+  t(matriz_incidencia),
+  beside = TRUE,
+  ylim = c(0, 100),
+  ylab = "Incidencia (%)",
+  main = "Comparación de Incidencia de Plagas Evaluadas",
+  col = c("darkgreen", "orange"),
+  legend.text = c("Nivel Árbol", "Nivel Fruto"),
+  args.legend = list(x = "topright", bty = "n")
+)
+
+text(
+  x = bp,
+  y = t(matriz_incidencia) + 3,
+  labels = paste0(t(matriz_incidencia), "%"),
+  cex = 0.9
+)
+```
+
+# justificacion a travez de la escala 
+
+```{r}
+clasificar_incidencia <- function(x) {
+  ifelse(x <= 20, "Baja",
+         ifelse(x <= 40, "Media",
+                ifelse(x <= 60, "Alta", "Muy alta")))
+}
+
+tabla_incidencia$Nivel_Arbol <- clasificar_incidencia(tabla_incidencia$Incidencia_Arbol)
+tabla_incidencia$Nivel_Fruto <- clasificar_incidencia(tabla_incidencia$Incidencia_Fruto)
+
+tabla_incidencia
+```
+
+
+```{r}
+justificacion_incidencia <- function(plaga, nivel, porcentaje, organo) {
+  paste0(
+    "La plaga ", plaga, 
+    " presentó una incidencia ", nivel, 
+    " (", porcentaje, "%) a nivel de ", organo, 
+    ", lo que indica una presencia significativa que puede afectar el desarrollo del cultivo, ",
+    "por lo que se recomienda su monitoreo continuo y la aplicación de estrategias de manejo integrado."
+  )
+}
+```
+
+
+### Justificacion para cada plaga
+
+```{r}
+#| label: tbl-justificacion
+#| tbl-cap: "Justificación Técnica del Estado Fitosanitario por Plaga"
+#| echo: false
+
+# 1. Crear la base de datos de justificación
+# Usamos los niveles ya calculados en tu análisis previo
+tabla_resumen <- data.frame(
+  Plaga = c("Monalonion", "Perforador", "Trips"),
+  Incidencia = c("65% (Muy Alta)", "45% (Alta)", "55% (Alta)"),
+  Justificación = c(
+    "Representa la mayor amenaza; requiere intervención inmediata para evitar la pérdida total de frutos jóvenes y necrosis.",
+    "Riesgo potencial elevado; la alta presencia en árbol sugiere una futura colonización masiva de mazorcas.",
+    "Presencia significativa; el raspado de tejidos está comprometiendo la calidad comercial externa del fruto."
+  ),
+  Acción = c("Control urgente", "Monitoreo preventivo", "Manejo cultural")
+)
+
+# 2. Generar la tabla con formato elegante
+knitr::kable(
+  tabla_resumen, 
+  col.names = c("Plaga", "Incidencia (Árbol)", "Justificación Técnica", "Recomendación"),
+  align = "llcl"
+)
+```
+
+# Resultados
+
+
+Monalonion (Monalonion dissimulatum)
+Esta plaga representa la mayor amenaza actual para el cultivo. Presentó una incidencia Muy Alta del 65% a nivel de árbol y del 44% en los frutos. Según la escala de severidad, estos valores indican una infestación establecida que requiere intervención inmediata para evitar la deformación de mazorcas y necrosis de brotes.
+
+Perforador de la mazorca (Carmenta foraseminis)
+El perforador mostró una incidencia del 45% a nivel de árbol (Nivel Alto). Sin embargo, su impacto directo en los frutos evaluados fue menor, con un 18% (Nivel Bajo). Aunque la afectación en mazorcas es baja actualmente, la presencia en los frutos sugiere un riesgo potencial de pérdida y caída prematura de frutos si no se controla la población larval.
+
+Trips (Selenothrips rubrocinctus)
+Los trips presentan una incidencia Alta a nivel de árbol (55%) y Media en frutos (30%). Las lesiones bronceadas observadas en las mazorcas, aunque se consideran de una plaga secundaria, están alcanzando niveles que podrían comprometer la calidad comercial del grano debido al raspado de los tejidos.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
